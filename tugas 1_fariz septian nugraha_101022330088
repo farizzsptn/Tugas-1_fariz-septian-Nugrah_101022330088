@@ -1,0 +1,131 @@
+# A* search yang disesuaikan dengan contoh pada gambar
+# Graph, biaya (edge weights) dan heuristic diset agar f = g + h pada contoh sama seperti gambar.
+
+from heapq import heappush, heappop  # priority queue untuk open set
+
+# ---------------------------
+# 1) Definisi graph & heuristic
+# ---------------------------
+# graph: adjacency list dengan bobot (cost)
+graph = {
+    'S': {'A': 3, 'D': 2},   # dari S ada ke A (cost 3) dan D (cost 2)
+    'A': {},                 # A adalah daun (tidak dipakai di jalur optimal di gambar)
+    'D': {'B': 1, 'E': 4},   # dari D ke B (1) dan D->E (4) (jalur alternatif yang menghasilkan f=9)
+    'B': {'C': 2, 'E': 1},   # B->C (2) dan B->E (1)
+    'C': {},                 # daun
+    'E': {'G': 3},           # E->G (3)
+    'G': {}                  # goal, heuristic 0
+}
+
+# heuristic h(n) sesuai angka pada gambar
+h = {
+    'S': 7,
+    'A': 9,
+    'D': 5,
+    'B': 4,
+    'C': 2,
+    'E': 3,
+    'G': 0
+}
+
+start = 'S'
+goal = 'G'
+
+# ---------------------------
+# 2) Fungsi A* yang juga mencetak langkah-langkah perhitungan f
+# ---------------------------
+def a_star_with_logging(start, goal):
+    """
+    Menjalankan A* dan menampilkan log eksplorasi serta perhitungan f seperti di gambar.
+    Mengembalikan path optimal (list node) jika ditemukan, selain itu None.
+    """
+
+    # open set: heap berdasar f = g + h
+    # tiap item heap: (f, g, current_node, parent)
+    open_heap = []
+    # masukkan start (g=0, f = 0 + h[start])
+    heappush(open_heap, (0 + h[start], 0, start, None))
+
+    # parent map untuk rekonstruksi jalur
+    parents = {start: None}
+    # terbaik g-score yang diketahui untuk tiap node (g = cost dari start ke node)
+    g_score = {start: 0}
+
+    # closed set (nodes yang sudah di-expand)
+    closed = set()
+
+    print("=== Mulai A* ===")
+    print(f"Start: {start} (h={h[start]}) --> f = 0 + {h[start]} = {0 + h[start]}")
+    print()
+
+    # loop utama sampai open set habis atau goal ditemukan
+    while open_heap:
+        f, g, current, parent = heappop(open_heap)  # ambil node terbaik (f terkecil)
+        # jika ada entry lama yang sudah di-close, lewati
+        if current in closed:
+            continue
+
+        # catat parent & g (karena kita pop pertama kali berarti ini rute terbaik saat ini)
+        parents[current] = parent
+        g_score[current] = g
+
+        # tandai sebagai di-expand (explored)
+        closed.add(current)
+
+        print(f"Expand node: {current} (g={g}, h={h[current]}, f={g} + {h[current]} = {g + h[current]})")
+
+        # jika current adalah goal, rekonstruksi jalur
+        if current == goal:
+            print("\nGoal ditemukan. Merekonstruksi jalur...\n")
+            path = []
+            node = goal
+            while node is not None:
+                path.append(node)
+                node = parents[node]
+            path.reverse()
+            return path
+
+        # periksa setiap tetangga
+        for neigh, cost in graph[current].items():
+            tentative_g = g + cost  # g baru kalau lewat current
+            # hitung f untuk tujuan logging persis seperti di gambar: tunjukkan komponen-komponennya
+            # Kita menampilkan string formula yang mengikuti gaya pada gambar (mis. "f = 2 + 1 + 4 = 7")
+            # Komponen: g sampai parent sebelum neighbor + cost edge + h(neigh)
+            # Untuk meniru gambar, kita ambil g_before = g (ini g sampai current)
+            g_before = g
+            # kalau neighbor sudah punya g lebih baik sebelumnya, kita bandingkan
+            prev_g = g_score.get(neigh, None)
+
+            # format formula yang mirip gambar:
+            # - jika h(neigh) == 0 (mis. goal), mereka kadang tulis "f = 4 + 3 = 7" (menghilangkan +0)
+            if h[neigh] == 0:
+                formula = f"f = {g_before} + {cost} = {tentative_g}"
+            else:
+                # kadang di gambar komponen ditulis seperti "2 + 1 + 4 = 7" (g before + edge cost + h)
+                formula = f"f = {g_before} + {cost} + {h[neigh]} = {tentative_g + h[neigh]}"
+
+            # Cetak informasi tetangga sesuai perhitungan gambar
+            print(f"  Neighbor {neigh} (h={h[neigh]}), edge cost {current}->{neigh} = {cost} -> {formula}")
+
+            # jika belum ada g untuk neighbor atau kita menemukan rute lebih baik -> update
+            if (prev_g is None) or (tentative_g < prev_g):
+                g_score[neigh] = tentative_g
+                parents[neigh] = current
+                heappush(open_heap, (tentative_g + h[neigh], tentative_g, neigh, current))
+                print(f"    -> masukkan/ update {neigh} ke open set dengan g={tentative_g}, f={tentative_g + h[neigh]}")
+            else:
+                print(f"    -> tidak memperbarui {neigh} karena g lama ({prev_g}) lebih baik atau sama")
+        print()  # baris kosong antar expand
+
+    # jika open habis tapi goal tidak ditemukan
+    print("Goal tidak ditemukan.")
+    return None
+
+# ---------------------------
+# 3) Jalankan A* dan tampilkan jalur
+# ---------------------------
+path = a_star_with_logging(start, goal)
+if path:
+    print("Jalur optimal ditemukan:", " -> ".join(path))
+else:
+    print("Tidak ada jalur ke goal.")
