@@ -1,0 +1,147 @@
+from heapq import heappush, heappop  # priority queue untuk open set
+➡️ Mengimpor fungsi heappush dan heappop dari modul heapq,
+yang digunakan untuk membuat struktur data priority queue.
+Struktur ini memastikan node dengan f terkecil (f = g + h) selalu diambil lebih dulu.
+# ---------------------------
+# 1) Definisi graph & heuristic
+# ---------------------------
+graph = {
+    'S': {'A': 3, 'D': 2},   # dari S ke A (biaya 3) dan S ke D (biaya 2)
+    'A': {},                 
+    'D': {'B': 1, 'E': 4},   # dari D ke B (1) dan D ke E (4)
+    'B': {'C': 2, 'E': 1},   # dari B ke C (2) dan ke E (1)
+    'C': {},                 
+    'E': {'G': 3},           # dari E ke G (3)
+    'G': {}                  # goal
+}
+
+# heuristic h(n): estimasi jarak ke goal (misal diambil dari gambar soal)
+h = {
+    'S': 7,
+    'A': 9,
+    'D': 5,
+    'B': 4,
+    'C': 2,
+    'E': 3,
+    'G': 0
+}
+➡️ graph adalah struktur adjacency list:
+menyimpan semua node dan tetangganya beserta biaya (cost) menuju node tersebut.
+➡️ h adalah heuristic atau estimasi jarak dari setiap node ke goal.
+Nilai heuristic ini dipakai untuk mempercepat pencarian (semakin kecil, semakin akurat).
+start = 'S'
+goal = 'G'
+➡️ Menentukan node awal (S) dan node tujuan (G).
+def a_star_with_logging(start, goal):
+    """
+    Fungsi utama algoritma A* dengan log langkah-langkah perhitungan f = g + h.
+    Mengembalikan path optimal jika ditemukan.
+    """
+➡️ Mendefinisikan fungsi a_star_with_logging yang akan menjalankan proses A*
+dan menc    open_heap = []  
+    heappush(open_heap, (0 + h[start], 0, start, None))
+etak semua langkah perhitungan agar mudah dipahami.
+➡️ open_heap adalah open set (priority queue).
+Elemen yang disimpan dalam bentuk (f, g, node, parent)
+
+f = total nilai (g + h)
+
+g = biaya sejauh ini dari start ke node
+
+parent = asal node (untuk melacak jalur nanti)
+
+heappush pertama memasukkan node awal S dengan g = 0, jadi f = 0 + h[S] = 7.
+    parents = {start: None}
+    g_score = {start: 0}
+    closed = set()
+    closed = set()
+➡️ parents: menyimpan dari mana setiap node berasal.
+➡️ g_score: biaya (jarak sebenarnya) paling kecil dari start ke node.
+➡️ closed: daftar node yang sudah diperiksa (tidak perlu diperiksa lagi).
+    print("=== Mulai A* ===")
+    print(f"Start: {start} (h={h[start]}) --> f = 0 + {h[start]} = {0 + h[start]}")
+    print()
+➡️ Mencetak informasi awal agar hasil output terlihat seperti langkah-langkah manual.
+    while open_heap:
+        f, g, current, parent = heappop(open_heap)
+        if current in closed:
+            continue
+➡️ Loop utama akan terus berjalan selama masih ada node di open_heap.
+heappop akan mengambil node dengan nilai f paling kecil.
+Jika node sudah pernah diperiksa (in closed), dilewati.
+        parents[current] = parent
+        g_score[current] = g
+        closed.add(current)
+➡️ Menandai node saat ini sebagai sudah dikunjungi,
+dan menyimpan informasi siapa parent-nya.
+        print(f"Expand node: {current} (g={g}, h={h[current]}, f={g} + {h[current]} = {g + h[current]})")
+➡️ Menampilkan proses expansion node (node yang sedang diperiksa).
+Informasi ini penting untuk menelusuri langkah A* secara manual.
+        if current == goal:
+            print("\nGoal ditemukan. Merekonstruksi jalur...\n")
+            path = []
+            node = goal
+            while node is not
+                path.append(node)
+                node = parents[node]
+            path.reverse()
+            return path
+            return path
+➡️ Jika node yang sedang diperiksa adalah goal, maka pencarian selesai.
+Proses ini akan melacak jalur dari goal ke start menggunakan parents,
+kemudian membalikkan urutannya agar jadi dari start → goal.
+        for neigh, cost in graph[current].items():
+            tentative_g = g + cost
+            g_before = g
+            prev_g = g_score.get(neigh, None)
+➡️ Mengecek semua tetangga (neighbor) dari node yang sedang diexpand.
+Setiap tetangga dihitung biaya sementaranya (tentative_g)
+yaitu biaya dari start ke current, ditambah biaya edge current -> neigh.
+            if h[neigh] == 0:
+                formula = f"f = {g_before} + {cost} = {tentative_g}"
+            else:
+                formula = f"f = {g_before} + {cost} + {h[neigh]} = {tentative_g + h[neigh]}"
+➡️ Membuat format tulisan perhitungan f = g + h agar mirip seperti gambar di soal.
+Jika heuristic-nya 0 (misal di goal), bagian +0 tidak ditampilkan.
+            print(f"  Neighbor {neigh} (h={h[neigh]}), edge cost {current}->{neigh} = {cost} -> {formula}")
+➡️ Menampilkan informasi setiap neighbor dan hasil perhitungan f-nya.
+Contoh hasilnya bisa seperti:
+Neighbor B (h=4), edge cost D->B = 1 -> f = 2 + 1 + 4 = 7
+            if (prev_g is None) or (tentative_g < prev_g):
+                g_score[neigh] = tentative_g
+                parents[neigh] = current
+                heappush(open_heap, (tentative_g + h[neigh], tentative_g, neigh, current))
+                print(f"    -> masukkan/ update {neigh} ke open set dengan g={tentative_g}, f={tentative_g + h[neigh]}")
+            else:
+                print(f"    -> tidak memperbarui {neigh} karena g lama ({prev_g}) lebih baik atau sama")
+        print()
+➡️ Jika node tetangga belum pernah dikunjungi atau ditemukan jalur yang lebih murah,
+maka g-nya diperbarui dan node dimasukkan ke open_heap.
+Kalau tidak lebih baik, maka diabaikan.
+Ini menjaga agar A* selalu menuju ke jalur termurah menuju goal.
+    print("Goal tidak ditemukan.")
+    return None
+➡️ Jika open_heap sudah kosong tapi goal belum ditemukan,
+berarti tidak ada jalur menuju goal.
+# ---------------------------
+# 3) Jalankan A* dan tampilkan hasil
+# ---------------------------
+path = a_star_with_logging(start, goal)
+if path:
+    print("Jalur optimal ditemukan:", " -> ".join(path))
+else:
+    print("Tidak ada jalur ke goal.")
+➡️ Menjalankan fungsi A* dan menampilkan hasil akhirnya.
+Kalau path ditemukan, dicetak seperti S -> D -> B -> E -> G.
+HASIL OUTPUT 
+=== Mulai A* ===
+Start: S (h=7) --> f = 0 + 7 = 7
+
+Expand node: S (g=0, h=7, f=7)
+  Neighbor A (h=9), edge cost S->A = 3 -> f = 0 + 3 + 9 = 12
+  Neighbor D (h=5), edge cost S->D = 2 -> f = 0 + 2 + 5 = 7
+...
+
+Goal ditemukan.
+Jalur optimal ditemukan: S -> D -> B -> E -> G
+
